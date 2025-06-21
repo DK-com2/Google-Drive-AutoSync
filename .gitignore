@@ -1,0 +1,116 @@
+# .gitignore - BirdNET AutoPipeline
+
+# 機密情報
+credentials.json
+token.pickle
+*.env
+.env
+config/local.json
+config/secrets.json
+
+# Google Drive API関連
+page_token.txt
+processed_files.txt
+last_run.txt
+error_flag.txt
+
+# ログファイル
+logs/
+*.log
+
+# データファイル
+data/downloads/
+data/temp/
+data/results/
+*.wav
+*.mp3
+*.flac
+*.aac
+*.m4a
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 仮想環境
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows関連
+desktop.ini
+*.lnk
+
+# 一時ファイル
+*.tmp
+*.temp
+*.downloading
+*.processing
+*.backup
+
+# テストファイル
+test_audio/
+sample_data/
+mock_files/
+
+# バックアップ
+backup/
+*.bak
+*.backup
+
+# 圧縮ファイル
+*.zip
+*.tar.gz
+*.rar
+
+# 設定ファイルバックアップ
+config/*.backup
+config/*_old.json
+
+# プロファイル・性能測定
+*.prof
+*.profile
+
+# 開発用ファイル
+TODO.md
+NOTES.md
+scratch/
+experiments/
