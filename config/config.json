@@ -1,25 +1,14 @@
 {
   "google_drive": {
-    "target_folder_id": "17E1enGLVkaT2iogeZRyQ1cg7hnIlPDXI",
+    "target_folder_id": "1YtPZeJNBB8DQaOIqL4N7Sb-9lUXOrpAG",
     "credentials_file": "credentials.json",
     "token_file": "token.pickle",
     "page_token_file": "page_token.txt"
   },
   "file_processing": {
-    "download_path": "S:/python/Google-Drive-AutoSync/data/downloads",
+    "download_path": "D:/Documents/Google-Drive-AutoSync/data/downloads",
     "chunk_size_mb": 5,
     "min_free_space_gb": 1
-  },
-  "monitoring": {
-    "check_interval_seconds": 30,
-    "max_retries": 3,
-    "retry_delay_seconds": 5
-  },
-  "audio_analysis": {
-    "birdnet_model_path": "models/BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite",
-    "segment_length": 3.0,
-    "overlap": 0.0,
-    "min_confidence": 0.25
   },
   "logging": {
     "level": "INFO",

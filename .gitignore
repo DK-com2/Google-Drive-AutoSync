@@ -18,10 +18,11 @@ error_flag.txt
 logs/
 *.log
 
-# データファイル
-data/downloads/
-data/temp/
-data/results/
+# データファイル（フォルダ構造は保持、ファイルは除外）
+data/downloads/*
+data/temp/*
+!data/downloads/.gitkeep
+!data/temp/.gitkeep
 *.wav
 *.mp3
 *.flac
@@ -65,6 +66,7 @@ venv.bak/
 *.swp
 *.swo
 *~
+.claude/
 
 # OS生成ファイル
 .DS_Store

@@ -16,7 +16,7 @@ import pickle
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -37,7 +37,7 @@ class DriveMonitor:
     # 対象ファイル形式
     AUDIO_EXTENSIONS = {'.wav', '.mp3', '.flac', '.aac'}
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: dict):
         """
         初期化
         
@@ -51,8 +51,8 @@ class DriveMonitor:
         # Google Drive API設定
         self.target_folder_id = config['google_drive']['target_folder_id']
         self.credentials_file = self.project_root / "config" / config['google_drive']['credentials_file']
-        self.token_file = self.project_root / "data" / config['google_drive']['token_file']
-        self.page_token_file = self.project_root / "data" / config['google_drive']['page_token_file']
+        self.token_file = self.project_root / "config" / config['google_drive']['token_file']
+        self.page_token_file = self.project_root / "config" / config['google_drive']['page_token_file']
         
         # APIサービス初期化
         self.service = self._authenticate()
@@ -116,7 +116,7 @@ class DriveMonitor:
             self.logger.error(f"初期ページトークン取得エラー: {e}")
             raise
     
-    def _is_target_file(self, file_info: Dict) -> bool:
+    def _is_target_file(self, file_info: dict) -> bool:
         """対象ファイルかどうかの判定"""
         if not file_info:
             return False
@@ -143,7 +143,7 @@ class DriveMonitor:
         
         return True
     
-    def _is_upload_complete(self, file_info: Dict) -> bool:
+    def _is_upload_complete(self, file_info: dict) -> bool:
         """
         アップロード完了判定（シンプル版）
         
@@ -180,7 +180,7 @@ class DriveMonitor:
         except Exception as e:
             self.logger.error(f"処理済みファイル追加エラー: {e}")
     
-    def check_for_new_files(self) -> List[Dict]:
+    def check_for_new_files(self) -> List[dict]:
         """
         新しいファイルのチェック
         
@@ -249,7 +249,7 @@ class DriveMonitor:
             self.logger.error(f"ファイルチェック中にエラー: {e}")
             raise
     
-    def _check_existing_files_directly(self) -> List[Dict]:
+    def _check_existing_files_directly(self) -> List[dict]:
         """
         初回実行時の既存ファイル直接チェック
         """
@@ -293,7 +293,7 @@ class DriveMonitor:
         self._add_processed_file(file_id)
         self.logger.debug(f"処理済みファイルに追加: {file_id}")
     
-    def get_file_details(self, file_id: str) -> Optional[Dict]:
+    def get_file_details(self, file_id: str) -> Optional[dict]:
         """ファイルの詳細情報を取得"""
         try:
             response = self.service.files().get(

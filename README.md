@@ -92,7 +92,7 @@ google-auth-oauthlib>=0.5.0
 ### 5. 設定テスト実行
 
 ```bash
-python scripts\test_setup.py
+python test.py
 ```
 
 ## 📁 プロジェクト構成
@@ -106,16 +106,9 @@ S:\python\Google-Drive-AutoSync\
 ├── 📁 config\                  # 設定ファイル
 │   ├── 📄 config.json          # メイン設定
 │   └── 📄 credentials.json     # Google Drive認証（機密）
-├── 📁 scripts\                 # 実行スクリプト
-│   ├── 📄 run_sync.bat         # Windows実行（サイレント）
-│   ├── 📄 run_sync.ps1         # PowerShell実行（サイレント）
-│   ├── 📄 test_manual_run.bat  # 手動テスト（詳細表示）
-│   ├── 📄 test_setup.py        # 設定テスト
-│   ├── 📄 process_existing_files.py  # 既存ファイル一括処理
-│   └── 📄 diagnose_drive.py    # 診断ツール
+├── 📄 test.py               # 統合テストスクリプト
 ├── 📁 data\                    # データ保存
 │   ├── 📁 downloads\           # ダウンロードファイル
-│   ├── 📁 results\             # 処理結果JSON
 │   ├── 📁 temp\                # 一時ファイル
 │   ├── 📄 page_token.txt       # 監視状態（自動生成）
 │   ├── 📄 last_run.txt         # 最終実行時刻（自動更新）
@@ -135,20 +128,11 @@ S:\python\Google-Drive-AutoSync\
 
 ### 手動実行
 ```bash
-# バッチファイルで実行（詳細表示）
-scripts\test_manual_run.bat
+# 統合テスト実行（設定確認・診断・既存ファイル処理）
+python test.py
 
-# PowerShellで実行（詳細表示）
-powershell -ExecutionPolicy Bypass scripts\test_manual_run.ps1
-
-# Pythonで直接実行
+# メイン処理実行
 python src\main.py
-
-# 既存ファイル一括処理
-python scripts\process_existing_files.py
-
-# 診断実行
-python scripts\diagnose_drive.py
 ```
 
 ### 自動実行（Windows Task Scheduler）
@@ -166,8 +150,9 @@ python scripts\diagnose_drive.py
 | **間隔** | 30分ごとに繰り返す |
 | **継続時間** | 4時間 |
 | **操作** | プログラムの開始 |
-| **プログラム** | `S:\python\Google-Drive-AutoSync\scripts\run_sync.bat` |
-| **開始** | `S:\python\Google-Drive-AutoSync` |
+| **プログラム** | `python` |
+| **引数** | `src\main.py` |
+| **開始** | `D:\Documents\Google-Drive-AutoSync` |
 
 詳細は [Task Scheduler設定ガイド](docs/TASK_SCHEDULER_SETUP.md) を参照
 
@@ -192,15 +177,11 @@ python scripts\diagnose_drive.py
    ↓
 8. ファイル整合性確認（MD5ハッシュ、サイズ）
    ↓
-9. 外部処理システム実行（例：BirdNET解析）
+9. Google Driveからファイル削除（権限エラー時はスキップ）
    ↓
-10. 結果をJSONで保存（data/results/）
+10. 処理済みファイルリストに記録
    ↓
-11. Google Driveからファイル削除（権限エラー時はスキップ）
-   ↓
-12. 処理済みファイルリストに記録
-   ↓
-13. 次回まで待機
+11. 次回まで待機
 ```
 
 ### 実際のログ出力例
@@ -216,16 +197,6 @@ python scripts\diagnose_drive.py
 ```
 
 ### 結果確認方法
-
-#### 処理結果の確認
-新しいファイルが処理されると、`data\results\` フォルダに処理結果が保存されます：
-
-```
-data\results\
-├── sync_result_20250620_222912_05 Adventure.json
-├── sync_result_20250620_222916_04 Famous Day.json
-└── sync_result_20250620_222920_03 Sample.json
-```
 
 #### ダウンロードファイルの確認
 ```
@@ -319,15 +290,11 @@ del data\token.pickle
 
 ### 日常的な確認（週1回程度）
 
-#### 1. 処理結果の確認
-- `data\results\` に新しいファイルがあるか
-- ファイル名の日付が最新か
-
-#### 2. ログの確認
+#### 1. ログの確認
 - `logs\autosync_YYYYMMDD.log` でエラーがないか
 - ファイル処理の成功・失敗状況
 
-#### 3. ディスク容量の確認
+#### 2. ディスク容量の確認
 - 十分な空き容量があるか
 - 不要なファイルがないか
 
@@ -337,7 +304,6 @@ del data\token.pickle
 ```bash
 # 古いログファイル削除（30日以上前）
 # 古いダウンロードファイル削除（容量節約）
-# 古い処理結果のアーカイブ
 ```
 
 #### 2. システム状態の確認

@@ -2,23 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 ファイル処理モジュール
-Google Driveからのダウンロード、BirdNET解析、クリーンアップを実行
+Google Driveからのダウンロードとクリーンアップを実行
 
 機能:
 - 安全なファイルダウンロード
 - ディスク容量管理
 - ファイル整合性確認
-- BirdNET解析（将来実装）
 - 自動クリーンアップ
 """
 
 import os
-import json
 import hashlib
 import logging
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.errors import HttpError
@@ -27,7 +24,7 @@ from googleapiclient.errors import HttpError
 class FileProcessor:
     """ファイル処理クラス"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: dict):
         """
         初期化
         
@@ -41,7 +38,6 @@ class FileProcessor:
         # ダウンロード設定
         self.download_path = Path(config['file_processing']['download_path'])
         self.temp_path = self.project_root / "data" / "temp"
-        self.results_path = self.project_root / "data" / "results"
         
         # 処理設定
         self.chunk_size = config['file_processing']['chunk_size_mb'] * 1024 * 1024
@@ -50,7 +46,6 @@ class FileProcessor:
         # ディレクトリ作成
         self.download_path.mkdir(parents=True, exist_ok=True)
         self.temp_path.mkdir(parents=True, exist_ok=True)
-        self.results_path.mkdir(parents=True, exist_ok=True)
     
     def _check_disk_space(self, required_size: int) -> bool:
         """
@@ -132,7 +127,7 @@ class FileProcessor:
             self.logger.error(f"整合性確認エラー: {e}")
             return False
     
-    def download_file(self, service, file_info: Dict) -> Optional[Path]:
+    def download_file(self, service, file_info: dict) -> Optional[Path]:
         """
         Google Driveからファイルをダウンロード
         
@@ -194,76 +189,7 @@ class FileProcessor:
             temp_file.unlink(missing_ok=True)
             return None
     
-    def analyze_audio(self, file_path: Path) -> Optional[Dict]:
-        """
-        BirdNET音声解析（将来実装）
-        
-        Args:
-            file_path: 音声ファイルパス
-            
-        Returns:
-            解析結果辞書
-        """
-        # TODO: BirdNET解析の実装
-        # 現在はダミーデータを返す
-        
-        self.logger.info(f"音声解析実行: {file_path.name}")
-        
-        # ダミー解析結果
-        dummy_result = {
-            'file_name': file_path.name,
-            'file_size': file_path.stat().st_size,
-            'analyzed_at': datetime.now().isoformat(),
-            'segments': [
-                {
-                    'start_time': 0.0,
-                    'end_time': 3.0,
-                    'species': 'Turdus migratorius',
-                    'confidence': 0.85,
-                    'quality_score': 0.78
-                },
-                {
-                    'start_time': 6.0,
-                    'end_time': 9.0,
-                    'species': 'Turdus migratorius',
-                    'confidence': 0.92,
-                    'quality_score': 0.89
-                }
-            ],
-            'summary': {
-                'total_segments': 2,
-                'species_detected': ['Turdus migratorius'],
-                'average_confidence': 0.885,
-                'processing_time_seconds': 12.5
-            }
-        }
-        
-        return dummy_result
     
-    def save_analysis_result(self, result: Dict, file_name: str) -> Path:
-        """
-        解析結果の保存
-        
-        Args:
-            result: 解析結果
-            file_name: 元のファイル名
-            
-        Returns:
-            結果ファイルのパス
-        """
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        result_file = self.results_path / f"analysis_{timestamp}_{Path(file_name).stem}.json"
-        
-        try:
-            with open(result_file, 'w', encoding='utf-8') as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-            
-            self.logger.info(f"解析結果保存: {result_file.name}")
-            return result_file
-            
-        except Exception as e:
-            self.logger.error(f"解析結果保存エラー: {e}")
-            raise
     
     def cleanup_file(self, file_path: Path):
         """
@@ -298,7 +224,7 @@ class FileProcessor:
             self.logger.error(f"ファイル削除中の予期しないエラー: {file_name} - {e}")
             raise
     
-    def process_file(self, file_info: Dict) -> bool:
+    def process_file(self, file_info: dict) -> bool:
         """
         ファイルの完全処理（ダウンロード→解析→クリーンアップ）
         
@@ -325,32 +251,22 @@ class FileProcessor:
             if not downloaded_file:
                 return False
             
-            # 2. 音声解析実行
-            analysis_result = self.analyze_audio(downloaded_file)
-            if not analysis_result:
-                self.logger.error(f"音声解析失敗: {file_name}")
-                self.cleanup_file(downloaded_file)
-                return False
-            
-            # 3. 解析結果保存
-            result_file = self.save_analysis_result(analysis_result, file_name)
-            
-            # 4. Google Driveからファイル削除（オプション）
+            # 2. Google Driveからファイル削除（オプション）
             try:
                 self.delete_from_drive(service, file_id, file_name)
             except Exception as e:
                 self.logger.warning(f"Google Driveファイル削除をスキップ: {file_name} - {str(e)}")
                 # 削除失敗しても処理は継続
             
-            # 5. ローカルファイルクリーンアップ（オプション）
+            # 3. ローカルファイルクリーンアップ（オプション）
             # 注意: ファイルを保持したい場合はコメントアウト
             # self.cleanup_file(downloaded_file)
             self.logger.info(f"ダウンロードファイルを保持: {downloaded_file}")
             
-            # 6. 処理済みマーク
+            # 4. 処理済みマーク
             monitor.mark_file_processed(file_id)
             
-            self.logger.info(f"ファイル処理完了: {file_name} -> {result_file.name}")
+            self.logger.info(f"ファイル処理完了: {file_name}")
             return True
             
         except Exception as e:
