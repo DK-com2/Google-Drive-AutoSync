@@ -2,6 +2,8 @@
 
 # 機密情報
 credentials.json
+config/client_secrets.json
+config/credentials.json
 token.pickle
 *.env
 .env
