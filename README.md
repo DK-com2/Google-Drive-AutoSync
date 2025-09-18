@@ -1,14 +1,15 @@
-# Google-Drive-AutoSync
+# Google-Drive-AutoSync（PyDrive2版）
 
-Google Driveに新しくアップロードされたファイルを自動的にダウンロードするシステム
+PyDrive2を使用したシンプルで効率的なGoogle Driveファイル自動同期システム
 
 ## このシステムでできること
 
 - Google Driveの指定したフォルダを監視
-- 新しくアップロードされた音声・動画ファイルを自動検出
+- 新しくアップロードされた音声ファイルを自動検出
 - ファイルを安全にパソコンにダウンロード
 - 重複ダウンロードを防止
 - 定期実行で完全自動化
+- PyDrive2による簡素化された認証システム
 
 ## 必要なもの
 
@@ -16,6 +17,20 @@ Google Driveに新しくアップロードされたファイルを自動的に�
 - Python 3.8以上
 - Google アカウント
 - 十分なディスク容量（1GB以上推奨）
+
+## PyDrive2移行の利点
+
+### 🔧 認証の簡素化
+- **旧版**: credentials.json + token.pickle + page_token.txt
+- **新版**: client_secrets.json + credentials.json のみ
+
+### 📝 コード量の削減
+- **旧版**: 複雑なGoogle API Client設定
+- **新版**: PyDrive2のシンプルなAPI
+
+### 🔄 自動リフレッシュ
+- PyDrive2が認証トークンを自動更新
+- より安定した長期運用
 
 ## セットアップ手順
 
@@ -26,12 +41,13 @@ Google Driveに新しくアップロードされたファイルを自動的に�
 2. 新しいプロジェクトを作成
 3. 「APIとサービス」→「ライブラリ」から「Google Drive API」を検索して有効化
 
-#### 認証情報の作成
+#### 認証情報の作成（PyDrive2版）
 1. 「APIとサービス」→「認証情報」
 2. 「認証情報を作成」→「OAuth クライアント ID」
 3. アプリケーションの種類：「デスクトップアプリケーション」
-4. 作成後、`credentials.json` をダウンロード
-5. ダウンロードした `credentials.json` を `config` フォルダに配置
+4. 作成後、JSONファイルをダウンロード
+5. **重要**: ダウンロードしたファイルを `client_secrets.json` にリネーム
+6. `client_secrets.json` を `config` フォルダに配置
 
 ### 2. 監視するフォルダの設定
 
@@ -49,7 +65,19 @@ Google Driveに新しくアップロードされたファイルを自動的に�
 ```json
 {
   "google_drive": {
-    "target_folder_id": "ここにフォルダIDを入力"
+    "target_folder_id": "ここにフォルダIDを入力",
+    "client_secrets_file": "client_secrets.json",
+    "credentials_file": "credentials.json"
+  },
+  "file_processing": {
+    "download_path": "D:/Documents/Google-Drive-AutoSync/data/downloads",
+    "chunk_size_mb": 5,
+    "min_free_space_gb": 1
+  },
+  "logging": {
+    "level": "INFO",
+    "max_log_files": 30,
+    "log_rotation_mb": 10
   }
 }
 ```
@@ -62,9 +90,15 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-#### 必要なライブラリのインストール
+#### PyDrive2のインストール
 ```
 pip install -r requirements.txt
+```
+
+**requirements.txt の内容（PyDrive2版）**:
+```
+PyDrive2>=1.17.0
+requests>=2.31.0
 ```
 
 ### 4. 動作テスト
@@ -74,7 +108,8 @@ python test.py
 ```
 
 このコマンドで以下がチェックされます：
-- 設定ファイルが正しいか
+- PyDrive2ライブラリが正しくインストールされているか
+- client_secrets.jsonが配置されているか
 - Google Drive に接続できるか
 - フォルダにアクセスできるか
 - 必要なフォルダが作成されているか
@@ -105,7 +140,7 @@ python main.py
 
 | 項目 | 設定値 |
 |------|--------|
-| 名前 | Google Drive AutoSync |
+| 名前 | Google Drive AutoSync (PyDrive2) |
 | トリガー | 毎日 |
 | 開始時刻 | 08:00（お好みで変更） |
 | 間隔 | 30分ごとに繰り返す |
@@ -114,15 +149,14 @@ python main.py
 | プログラム | `main.bat` |
 | 開始場所 | プロジェクトフォルダのパス |
 
-`main.bat`を使用することで、Pythonのパスや仮想環境の設定を気にする必要がありません。
-
 ## ファイルの確認方法
 
 ### ダウンロードされたファイル
 ```
 data\downloads\
 ├── 音楽ファイル1.mp3
-├── 動画ファイル1.mp4
+├── 音楽ファイル2.wav
+├── 音楽ファイル3.flac
 └── ...
 ```
 
@@ -156,44 +190,64 @@ logs\
 }
 ```
 
-詳細は `config\config_説明.md` を参照してください。
 
 ## よくある問題と解決方法
 
-### 認証エラーが出る
-- `credentials.json` が正しい場所にあるか確認
-- Google Cloud Console で API が有効になっているか確認
+### PyDrive2認証エラーが出る
+- `client_secrets.json` が正しい場所にあるか確認
+- Google Cloud Console で Google Drive API が有効になっているか確認
+- 初回認証でブラウザが開かない場合は手動で認証URLにアクセス
 
 ### ファイルが検出されない
 - フォルダ ID が正しいか確認
 - フォルダへのアクセス権限があるか確認
-- 対象ファイルが音声・動画形式か確認（.mp3, .mp4, .wav など）
+- 対象ファイルが音声形式か確認（.wav, .mp3, .flac, .aac）
+
+### "client_secrets.json not found" エラー
+- Google Cloud Consoleからダウンロードしたファイルが正しい名前でconfig/フォルダに配置されているか確認
 
 ### ディスク容量不足
 - ダウンロード先ドライブに十分な空き容量を確保
 - 古いファイルを削除
 
-### Google Drive からファイルが削除されない
-これは正常な動作です。権限の関係でファイルを削除できない場合があります。必要に応じて手動で削除してください。
+### PyDrive2のリフレッシュトークンエラー
+- `config/credentials.json` を削除して再認証
+- Google Cloud Consoleでプロジェクトの認証設定を確認
 
-## プロジェクト構成
+## プロジェクト構成（PyDrive2版）
 
 ```
 Google-Drive-AutoSync\
-├── main.py              # メインプログラム
-├── main.bat             # 実行用バッチファイル（Windowsで簡単実行）
-├── test.py              # テスト・診断ツール
-├── config\              # 設定ファイル
+├── main.py              # メインプログラム（PyDrive2対応）
+├── main.bat             # 実行用バッチファイル
+├── test.py              # テスト・診断ツール（PyDrive2対応）
+├── requirements.txt     # PyDrive2依存関係
+├── config\
+│   ├── config.json      # 設定ファイル（簡素化）
+│   ├── client_secrets.json # Google認証情報（PyDrive2）
+│   └── credentials.json # 自動生成認証キャッシュ
 ├── data\                # ダウンロードファイル保存場所
 ├── logs\                # ログファイル
-└── src\                 # プログラムの部品
+└── src\                 # PyDrive2対応プログラム
+    ├── drive_monitor.py # PyDrive2監視モジュール
+    └── file_processor.py # PyDrive2処理モジュール
 ```
 
 ## サポート
 
 問題が発生した場合：
 1. ログファイル（`logs` フォルダ）を確認
-2. `python test.py` で診断を実行
+2. `python test.py` で診断を実行（PyDrive2対応版）
 3. 設定ファイルを確認
+4. PyDrive2のドキュメントを参照: https://github.com/iterative/PyDrive2
 
-*Google Drive の自動ファイル取得システム*
+## 更新履歴
+
+### v2.0.0 (Current - PyDrive2版)
+- PyDrive2による簡素化された認証システム
+- 自動リフレッシュトークンによる長期安定運用
+- コード量の大幅削減とエラーハンドリング改善
+
+---
+
+*PyDrive2による効率的なGoogle Drive自動同期システム*

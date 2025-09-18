@@ -1,9 +1,8 @@
 {
   "google_drive": {
     "target_folder_id": "1YtPZeJNBB8DQaOIqL4N7Sb-9lUXOrpAG",
-    "credentials_file": "credentials.json",
-    "token_file": "token.pickle",
-    "page_token_file": "page_token.txt"
+    "client_secrets_file": "client_secrets.json",
+    "credentials_file": "credentials.json"
   },
   "file_processing": {
     "download_path": "D:/Documents/Google-Drive-AutoSync/data/downloads",

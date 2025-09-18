@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ファイル処理モジュール
-Google Driveからのダウンロードとクリーンアップを実行
+ファイル処理モジュール（PyDrive2版）
+PyDrive2を使用したGoogle Driveからのダウンロードとクリーンアップ
 
 機能:
-- 安全なファイルダウンロード
+- PyDrive2による安全なファイルダウンロード
 - ディスク容量管理
 - ファイル整合性確認
 - 自動クリーンアップ
@@ -14,15 +14,15 @@ Google Driveからのダウンロードとクリーンアップを実行
 import os
 import hashlib
 import logging
+import shutil
 from pathlib import Path
 from typing import Optional
 
-from googleapiclient.http import MediaIoBaseDownload
-from googleapiclient.errors import HttpError
+from pydrive2.files import GoogleDriveFile
 
 
 class FileProcessor:
-    """ファイル処理クラス"""
+    """ファイル処理クラス（PyDrive2版）"""
     
     def __init__(self, config: dict):
         """
@@ -61,8 +61,7 @@ class FileProcessor:
             # 必要容量を2.5倍で計算（安全マージン + 一時ファイル）
             required_space = required_size * 2.5 + self.min_free_space
             
-            # Windows対応: shutil.disk_usageを使用
-            import shutil
+            # ディスク使用量を確認
             total, used, free_space = shutil.disk_usage(self.download_path)
             
             if free_space < required_space:
@@ -115,11 +114,12 @@ class FileProcessor:
                 self.logger.error(f"ファイルサイズ不一致: 期待={expected_size}, 実際={actual_size}")
                 return False
             
-            # MD5ハッシュ確認
-            actual_md5 = self._calculate_md5(file_path)
-            if actual_md5 != expected_md5:
-                self.logger.error(f"MD5ハッシュ不一致: 期待={expected_md5}, 実際={actual_md5}")
-                return False
+            # MD5ハッシュ確認（MD5が提供されている場合のみ）
+            if expected_md5:
+                actual_md5 = self._calculate_md5(file_path)
+                if actual_md5 != expected_md5:
+                    self.logger.error(f"MD5ハッシュ不一致: 期待={expected_md5}, 実際={actual_md5}")
+                    return False
             
             return True
             
@@ -127,12 +127,12 @@ class FileProcessor:
             self.logger.error(f"整合性確認エラー: {e}")
             return False
     
-    def download_file(self, service, file_info: dict) -> Optional[Path]:
+    def download_file(self, drive_monitor, file_info: dict) -> Optional[Path]:
         """
-        Google Driveからファイルをダウンロード
+        Google Driveからファイルをダウンロード（PyDrive2版）
         
         Args:
-            service: Google Drive APIサービス
+            drive_monitor: DriveMonitorインスタンス
             file_info: ファイル情報
             
         Returns:
@@ -141,7 +141,7 @@ class FileProcessor:
         file_id = file_info['id']
         file_name = file_info['name']
         file_size = int(file_info.get('size', 0))
-        expected_md5 = file_info.get('md5Checksum')
+        expected_md5 = file_info.get('md5Checksum', '')
         
         self.logger.info(f"ダウンロード開始: {file_name} ({file_size/1024/1024:.1f}MB)")
         
@@ -154,19 +154,15 @@ class FileProcessor:
         final_file = self.download_path / file_name
         
         try:
-            # ダウンロード実行
-            request = service.files().get_media(fileId=file_id)
+            # PyDrive2のファイルオブジェクトを取得
+            drive_file = drive_monitor.get_drive_file(file_id)
+            if not drive_file:
+                self.logger.error(f"ファイル取得失敗: {file_name}")
+                return None
             
-            with open(temp_file, 'wb') as f:
-                downloader = MediaIoBaseDownload(f, request, chunksize=self.chunk_size)
-                done = False
-                
-                while not done:
-                    status, done = downloader.next_chunk()
-                    if status:
-                        progress = int(status.progress() * 100)
-                        if progress % 20 == 0:  # 20%ごとに表示
-                            self.logger.info(f"ダウンロード進捗: {progress}%")
+            # PyDrive2でダウンロード実行
+            self.logger.info(f"ダウンロード中: {file_name}")
+            drive_file.GetContentFile(str(temp_file))
             
             # ファイル整合性確認
             if expected_md5 and not self._verify_file_integrity(temp_file, expected_md5, file_size):
@@ -175,21 +171,18 @@ class FileProcessor:
                 return None
             
             # 最終ファイルに移動
+            if final_file.exists():
+                final_file.unlink()  # 既存ファイルがあれば削除
+            
             temp_file.rename(final_file)
             self.logger.info(f"ダウンロード完了: {file_name}")
             
             return final_file
             
-        except HttpError as e:
+        except Exception as e:
             self.logger.error(f"ダウンロードエラー: {file_name} - {e}")
             temp_file.unlink(missing_ok=True)
             return None
-        except Exception as e:
-            self.logger.error(f"ダウンロード中の予期しないエラー: {file_name} - {e}")
-            temp_file.unlink(missing_ok=True)
-            return None
-    
-    
     
     def cleanup_file(self, file_path: Path):
         """
@@ -205,28 +198,29 @@ class FileProcessor:
         except Exception as e:
             self.logger.warning(f"ファイル削除失敗: {file_path.name} - {e}")
     
-    def delete_from_drive(self, service, file_id: str, file_name: str):
+    def delete_from_drive(self, drive_monitor, file_id: str, file_name: str):
         """
-        Google Driveからファイルを削除
+        Google Driveからファイルを削除（PyDrive2版）
         
         Args:
-            service: Google Drive APIサービス
+            drive_monitor: DriveMonitorインスタンス
             file_id: ファイルID
             file_name: ファイル名
         """
         try:
-            service.files().delete(fileId=file_id).execute()
-            self.logger.info(f"Google Driveからファイル削除: {file_name}")
-        except HttpError as e:
-            self.logger.error(f"Google Driveファイル削除エラー: {file_name} - {e}")
-            raise
+            drive_file = drive_monitor.get_drive_file(file_id)
+            if drive_file:
+                drive_file.Delete()
+                self.logger.info(f"Google Driveからファイル削除: {file_name}")
+            else:
+                self.logger.warning(f"削除対象ファイルが見つかりません: {file_name}")
         except Exception as e:
-            self.logger.error(f"ファイル削除中の予期しないエラー: {file_name} - {e}")
+            self.logger.error(f"Google Driveファイル削除エラー: {file_name} - {e}")
             raise
     
     def process_file(self, file_info: dict) -> bool:
         """
-        ファイルの完全処理（ダウンロード→解析→クリーンアップ）
+        ファイルの完全処理（ダウンロード→クリーンアップ）
         
         Args:
             file_info: ファイル情報
@@ -238,22 +232,18 @@ class FileProcessor:
         file_name = file_info['name']
         
         try:
-            # Google Drive APIサービスを取得（drive_monitorから）
-            import sys
-            from pathlib import Path
-            sys.path.insert(0, str(Path(__file__).parent))
-            from drive_monitor import DriveMonitor
+            # DriveMonitorインスタンスを取得
+            from .drive_monitor import DriveMonitor
             monitor = DriveMonitor(self.config)
-            service = monitor.service
             
             # 1. ファイルダウンロード
-            downloaded_file = self.download_file(service, file_info)
+            downloaded_file = self.download_file(monitor, file_info)
             if not downloaded_file:
                 return False
             
             # 2. Google Driveからファイル削除（オプション）
             try:
-                self.delete_from_drive(service, file_id, file_name)
+                self.delete_from_drive(monitor, file_id, file_name)
             except Exception as e:
                 self.logger.warning(f"Google Driveファイル削除をスキップ: {file_name} - {str(e)}")
                 # 削除失敗しても処理は継続

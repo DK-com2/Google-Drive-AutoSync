@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-BirdNET AutoPipeline - メインプログラム
-シンプルで実用的なGoogle Drive監視・ファイル処理システム
+Google Drive AutoSync - メインプログラム（PyDrive2版）
+PyDrive2を使用したシンプルで実用的なGoogle Drive監視・ファイル処理システム
 
-作成者: BirdNET開発チーム
-最終更新: 2024-06-20
+最終更新: 2024-06-20（PyDrive2移行）
 """
 
 import os
