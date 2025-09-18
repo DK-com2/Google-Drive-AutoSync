@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ファイル処理モジュール（PyDrive2版）
-PyDrive2を使用したGoogle Driveからのダウンロードとクリーンアップ
-
 機能:
 - PyDrive2による安全なファイルダウンロード
 - ディスク容量管理

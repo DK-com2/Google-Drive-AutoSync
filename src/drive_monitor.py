@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Google Drive監視モジュール（PyDrive2版）
-PyDrive2を使用したシンプルで効率的なファイル監視システム
-
 機能:
 - PyDrive2による簡素化された認証
 - 定期的なフォルダ監視

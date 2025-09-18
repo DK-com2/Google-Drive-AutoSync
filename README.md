@@ -1,6 +1,6 @@
 # Google-Drive-AutoSync（PyDrive2版）
 
-PyDrive2を使用したシンプルで効率的なGoogle Driveファイル自動同期システム
+PyDrive2を使用したなGoogle Driveファイル自動同期システム
 
 ## このシステムでできること
 
@@ -16,7 +16,6 @@ PyDrive2を使用したシンプルで効率的なGoogle Driveファイル自動
 - Windows 10/11
 - Python 3.8以上
 - Google アカウント
-- 十分なディスク容量（1GB以上推奨）
 
 ## PyDrive2移行の利点
 
